@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sandra Chang — Code Showcase</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c10;
+    --panel: #0d1117;
+    --surface: #161b22;
+    --border: #21262d;
+    --border2: #30363d;
+    --js: #f0c040;
+    --py: #4ec9a0;
+    --cpp: #7aadff;
+    --comment: #545d68;
+    --string: #a8d5a2;
+    --keyword: #c792ea;
+    --fn: #82aaff;
+    --num: #f78c6c;
+    --type: #ffcb6b;
+    --op: #89ddff;
+    --text: #cdd9e5;
+    --muted: #545d68;
+    --mono: 'IBM Plex Mono', monospace;
+    --serif: 'Instrument Serif', Georgia, serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* scanline overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    padding: 2rem 0 3rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 3rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .header-left {}
+
+  .prompt-line {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  .prompt-line span { color: var(--py); }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 400;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  .header-meta {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.9;
+  }
+
+  .header-meta .tag {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    margin-left: 0.3rem;
+  }
+
+  /* ── LANGUAGE TABS ── */
+  .lang-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .lang-tab {
+    padding: 0.7rem 1.5rem;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    border: 1px solid transparent;
+    border-bottom: none;
+    position: relative;
+    top: 1px;
+    transition: color 0.2s, background 0.2s;
+    user-select: none;
+    background: transparent;
+    outline: none;
+  }
+
+  .lang-tab .dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+  }
+
+  .lang-tab[data-lang="js"] .dot  { background: var(--js); }
+  .lang-tab[data-lang="py"] .dot  { background: var(--py); }
+  .lang-tab[data-lang="cpp"] .dot { background: var(--cpp); }
+
+  .lang-tab.active {
+    background: var(--panel);
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .lang-tab.active[data-lang="js"]  { color: var(--js); }
+  .lang-tab.active[data-lang="py"]  { color: var(--py); }
+  .lang-tab.active[data-lang="cpp"] { color: var(--cpp); }
+
+  /* ── CODE PANEL ── */
+  .code-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-top: none;
+    display: none;
+  }
+
+  .code-panel.active { display: block; }
+
+  .panel-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .panel-dots {
+    display: flex;
+    gap: 0.4rem;
+  }
+  .panel-dots span {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    opacity: 0.6;
+  }
+  .panel-dots span:nth-child(1) { background: #ff5f57; }
+  .panel-dots span:nth-child(2) { background: #febc2e; }
+  .panel-dots span:nth-child(3) { background: #28c840; }
+
+  .panel-filename {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  .run-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    padding: 0.3rem 0.9rem;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .run-btn:hover {
+    border-color: currentColor;
+    color: var(--text);
+  }
+  .panel-topbar.js-bar .run-btn:hover  { color: var(--js); }
+  .panel-topbar.py-bar .run-btn:hover  { color: var(--py); }
+  .panel-topbar.cpp-bar .run-btn:hover { color: var(--cpp); }
+
+  /* ── CODE + OUTPUT SPLIT ── */
+  .panel-body {
+    display: grid;
+    grid-template-columns: 1fr 1px 360px;
+  }
+
+  @media (max-width: 720px) {
+    .panel-body { grid-template-columns: 1fr; }
+    .panel-divider, .output-pane { border-top: 1px solid var(--border); }
+  }
+
+  .panel-divider {
+    background: var(--border);
+  }
+
+  .code-pane {
+    padding: 1.5rem 1.5rem 1.5rem 0;
+    overflow-x: auto;
+    counter-reset: lines;
+  }
+
+  .code-lines {
+    display: table;
+    width: 100%;
+  }
+
+  .code-line {
+    display: table-row;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+  .code-line.revealed {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .ln {
+    display: table-cell;
+    width: 2.5rem;
+    padding-right: 1.2rem;
+    text-align: right;
+    color: var(--border2);
+    user-select: none;
+    font-size: 11px;
+    vertical-align: top;
+    padding-top: 0.05em;
+  }
+
+  .lc {
+    display: table-cell;
+    white-space: pre;
+    padding-bottom: 0;
+  }
+
+  /* ── SYNTAX COLORS ── */
+  .kw  { color: var(--keyword); }
+  .fn  { color: var(--fn); }
+  .str { color: var(--string); }
+  .num { color: var(--num); }
+  .cm  { color: var(--comment); font-style: italic; }
+  .tp  { color: var(--type); }
+  .op  { color: var(--op); }
+  .pn  { color: var(--text); }  /* punctuation */
+
+  /* ── OUTPUT PANE ── */
+  .output-pane {
+    padding: 1.2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .output-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .output-content {
+    flex: 1;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 2;
+  }
+
+  .output-content .o-line {
+    display: block;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    white-space: pre;
+  }
+  .output-content .o-line.show { opacity: 1; }
+  .output-content .o-line.accent-js  { color: var(--js); }
+  .output-content .o-line.accent-py  { color: var(--py); }
+  .output-content .o-line.accent-cpp { color: var(--cpp); }
+  .output-content .o-line.result     { color: var(--text); font-weight: 600; }
+  .output-content .o-line.dim        { color: var(--border2); }
+
+  .cursor-blink {
+    display: inline-block;
+    width: 7px; height: 13px;
+    background: var(--text);
+    vertical-align: middle;
+    animation: blink 1s step-end infinite;
+    opacity: 0;
+    margin-left: 2px;
+  }
+  .cursor-blink.active { opacity: 1; }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+
+  /* ── CONCEPT BAR ── */
+  .concept-bar {
+    margin-top: 3rem;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    padding: 1.5rem 2rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+
+  @media (max-width: 600px) {
+    .concept-bar { grid-template-columns: 1fr; gap: 1rem; }
+  }
+
+  .concept-item {}
+
+  .concept-lang {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+  .concept-item:nth-child(1) .concept-lang { color: var(--js); }
+  .concept-item:nth-child(2) .concept-lang { color: var(--py); }
+  .concept-item:nth-child(3) .concept-lang { color: var(--cpp); }
+
+  .concept-title {
+    font-family: var(--serif);
+    font-size: 1rem;
+    font-style: italic;
+    margin-bottom: 0.3rem;
+    color: var(--text);
+  }
+
+  .concept-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .footer-left {
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+    font-family: var(--serif);
+  }
+
+  .footer-right {
+    font-size: 10px;
+    color: var(--border2);
+    letter-spacing: 0.1em;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="prompt-line"><span>~</span> /sandra/code-showcase</div>
+      <h1>Code as Creative Material</h1>
+    </div>
+    <div class="header-meta">
+      Sandra (Tien-Jo) Chang
+      <br>
+      <span class="tag">JS</span>
+      <span class="tag">Python</span>
+      <span class="tag">C++</span>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="lang-tabs">
+    <button class="lang-tab active" data-lang="js" onclick="switchTab('js')">
+      <span class="dot"></span>JavaScript
+    </button>
+    <button class="lang-tab" data-lang="py" onclick="switchTab('py')">
+      <span class="dot"></span>Python
+    </button>
+    <button class="lang-tab" data-lang="cpp" onclick="switchTab('cpp')">
+      <span class="dot"></span>C++
+    </button>
+  </div>
+
+  <!-- ── JAVASCRIPT PANEL ── -->
+  <div class="code-panel active" id="panel-js">
+    <div class="panel-topbar js-bar">
+      <div class="panel-dots"><span></span><span></span><span></span></div>
+      <span class="panel-filename">audioReactiveEngine.js</span>
+      <button class="run-btn" onclick="runOutput('js')">▶ RUN</button>
+    </div>
+    <div class="panel-body">
+      <div class="code-pane">
+        <div class="code-lines" id="code-js"></div>
+      </div>
+      <div class="panel-divider"></div>
+      <div class="output-pane">
+        <div class="output-label">Console Output <span class="cursor-blink" id="cur-js"></span></div>
+        <div class="output-content" id="out-js"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PYTHON PANEL ── -->
+  <div class="code-panel" id="panel-py">
+    <div class="panel-topbar py-bar">
+      <div class="panel-dots"><span></span><span></span><span></span></div>
+      <span class="panel-filename">particle_field.py</span>
+      <button class="run-btn" onclick="runOutput('py')">▶ RUN</button>
+    </div>
+    <div class="panel-body">
+      <div class="code-pane">
+        <div class="code-lines" id="code-py"></div>
+      </div>
+      <div class="panel-divider"></div>
+      <div class="output-pane">
+        <div class="output-label">Console Output <span class="cursor-blink" id="cur-py"></span></div>
+        <div class="output-content" id="out-py"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── C++ PANEL ── -->
+  <div class="code-panel" id="panel-cpp">
+    <div class="panel-topbar cpp-bar">
+      <div class="panel-dots"><span></span><span></span><span></span></div>
+      <span class="panel-filename">SignalProcessor.cpp</span>
+      <button class="run-btn" onclick="runOutput('cpp')">▶ RUN</button>
+    </div>
+    <div class="panel-body">
+      <div class="code-pane">
+        <div class="code-lines" id="code-cpp"></div>
+      </div>
+      <div class="panel-divider"></div>
+      <div class="output-pane">
+        <div class="output-label">Console Output <span class="cursor-blink" id="cur-cpp"></span></div>
+        <div class="output-content" id="out-cpp"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONCEPT BAR -->
+  <div class="concept-bar">
+    <div class="concept-item">
+      <div class="concept-lang">JavaScript</div>
+      <div class="concept-title">Real-Time Audio Engine</div>
+      <div class="concept-desc">Web Audio API + custom FFT analysis pipeline. Closures, async scheduling, and reactive data binding for live performance tools.</div>
+    </div>
+    <div class="concept-item">
+      <div class="concept-lang">Python</div>
+      <div class="concept-title">Particle Field Simulation</div>
+      <div class="concept-desc">NumPy vectorized physics with spatial hashing for O(n log n) neighbor queries. Generator-based streaming for memory-efficient large-scale simulations.</div>
+    </div>
+    <div class="concept-item">
+      <div class="concept-lang">C++</div>
+      <div class="concept-title">DSP Signal Processor</div>
+      <div class="concept-desc">Template metaprogramming for compile-time filter design. RAII resource management and lock-free ring buffers for real-time audio I/O in openFrameworks.</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span class="footer-left">Sandra (Tien-Jo) Chang — Creative Technologist</span>
+    <span class="footer-right">MFA CANDIDATE · CALARTS · 2026</span>
+  </div>
+
+</div>
+
+<script>
+// ── CODE DEFINITIONS ──────────────────────────────────────────────────────────
+
+const codes = {
+
+  js: [
+    `<span class="cm">// audioReactiveEngine.js — Web Audio API + real-time FFT analysis</span>`,
+    `<span class="cm">// Powers live generative visuals keyed to musical frequency bands</span>`,
+    ``,
+    `<span class="kw">class</span> <span class="tp">AudioReactiveEngine</span> {`,
+    `  <span class="fn">constructor</span>(<span class="pn">config = {}</span>) {`,
+    `    <span class="kw">this</span>.<span class="pn">ctx</span>    <span class="op">=</span> <span class="kw">new</span> <span class="tp">AudioContext</span>();`,
+    `    <span class="kw">this</span>.<span class="pn">fftSize</span> <span class="op">=</span> config.fftSize <span class="op">??</span> <span class="num">2048</span>;`,
+    `    <span class="kw">this</span>.<span class="pn">bands</span>   <span class="op">=</span> <span class="kw">this</span>.<span class="fn">#initBands</span>();`,
+    `    <span class="kw">this</span>.<span class="pn">_smoothed</span> <span class="op">=</span> <span class="kw">new</span> <span class="tp">Float32Array</span>(<span class="num">4</span>);`,
+    `  }`,
+    ``,
+    `  <span class="fn">#initBands</span>() {`,
+    `    <span class="cm">// Perceptually-weighted frequency bands (Hz)</span>`,
+    `    <span class="kw">return</span> { sub: [<span class="num">20</span>,<span class="num">80</span>], bass: [<span class="num">80</span>,<span class="num">300</span>],`,
+    `             mid: [<span class="num">300</span>,<span class="num">3000</span>], high: [<span class="num">3000</span>,<span class="num">16000</span>] };`,
+    `  }`,
+    ``,
+    `  <span class="fn">analyze</span>(<span class="pn">analyser</span>) {`,
+    `    <span class="kw">const</span> <span class="pn">data</span> <span class="op">=</span> <span class="kw">new</span> <span class="tp">Uint8Array</span>(analyser.frequencyBinCount);`,
+    `    analyser.<span class="fn">getByteFrequencyData</span>(data);`,
+    ``,
+    `    <span class="kw">const</span> <span class="pn">energy</span> <span class="op">=</span> Object.<span class="fn">entries</span>(<span class="kw">this</span>.bands)`,
+    `      .<span class="fn">map</span>(([label, [lo, hi]]) <span class="op">=></span> {`,
+    `        <span class="kw">const</span> <span class="pn">rms</span> <span class="op">=</span> <span class="kw">this</span>.<span class="fn">#rmsInRange</span>(data, lo, hi);`,
+    `        <span class="kw">return</span> [label, rms];`,
+    `      });`,
+    ``,
+    `    <span class="cm">// Exponential smoothing — prevents visual strobing</span>`,
+    `    <span class="kw">const</span> α <span class="op">=</span> <span class="num">0.15</span>;`,
+    `    energy.<span class="fn">forEach</span>(([,v], i) <span class="op">=></span> {`,
+    `      <span class="kw">this</span>._smoothed[i] <span class="op">=</span> α <span class="op">*</span> v <span class="op">+</span> (<span class="num">1</span> <span class="op">-</span> α) <span class="op">*</span> <span class="kw">this</span>._smoothed[i];`,
+    `    });`,
+    `    <span class="kw">return</span> <span class="tp">Object</span>.<span class="fn">fromEntries</span>(`,
+    `      energy.<span class="fn">map</span>(([k], i) <span class="op">=></span> [k, <span class="kw">this</span>._smoothed[i]])`,
+    `    );`,
+    `  }`,
+    ``,
+    `  <span class="fn">#rmsInRange</span>(<span class="pn">data, lo, hi</span>) {`,
+    `    <span class="kw">const</span> <span class="pn">nyq</span>  <span class="op">=</span> <span class="kw">this</span>.ctx.sampleRate <span class="op">/</span> <span class="num">2</span>;`,
+    `    <span class="kw">const</span> <span class="pn">bins</span> <span class="op">=</span> data.length;`,
+    `    <span class="kw">const</span> <span class="pn">s</span>    <span class="op">=</span> <span class="tp">Math</span>.<span class="fn">round</span>(lo <span class="op">/</span> nyq <span class="op">*</span> bins);`,
+    `    <span class="kw">const</span> <span class="pn">e</span>    <span class="op">=</span> <span class="tp">Math</span>.<span class="fn">round</span>(hi <span class="op">/</span> nyq <span class="op">*</span> bins);`,
+    `    <span class="kw">const</span> <span class="pn">sum</span>  <span class="op">=</span> data.<span class="fn">slice</span>(s, e).<span class="fn">reduce</span>((a, v) <span class="op">=></span> a <span class="op">+</span> v <span class="op">**</span> <span class="num">2</span>, <span class="num">0</span>);`,
+    `    <span class="kw">return</span> <span class="tp">Math</span>.<span class="fn">sqrt</span>(sum <span class="op">/</span> (e <span class="op">-</span> s)) <span class="op">/</span> <span class="num">255</span>;`,
+    `  }`,
+    ``,
+    `  <span class="cm">// Async generator — streams energy frames at target BPM grid</span>`,
+    `  <span class="kw">async</span> <span class="op">*</span><span class="fn">stream</span>(<span class="pn">analyser, bpm = 120</span>) {`,
+    `    <span class="kw">const</span> <span class="pn">interval</span> <span class="op">=</span> (<span class="num">60000</span> <span class="op">/</span> bpm) <span class="op">/</span> <span class="num">4</span>;`,
+    `    <span class="kw">while</span> (<span class="kw">true</span>) {`,
+    `      <span class="kw">yield</span> <span class="kw">this</span>.<span class="fn">analyze</span>(analyser);`,
+    `      <span class="kw">await new</span> <span class="tp">Promise</span>(r <span class="op">=></span> <span class="fn">setTimeout</span>(r, interval));`,
+    `    }`,
+    `  }`,
+    `}`,
+  ],
+
+  py: [
+    `<span class="cm"># particle_field.py — vectorized physics simulation</span>`,
+    `<span class="cm"># Used in interactive installations to drive spatial audio triggers</span>`,
+    ``,
+    `<span class="kw">import</span> numpy <span class="kw">as</span> <span class="pn">np</span>`,
+    `<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, field`,
+    `<span class="kw">from</span> typing <span class="kw">import</span> Generator, Optional`,
+    ``,
+    `<span class="op">@</span><span class="fn">dataclass</span>`,
+    `<span class="kw">class</span> <span class="tp">ParticleField</span>:`,
+    `    n:       <span class="tp">int</span>   <span class="op">=</span> <span class="num">1000</span>`,
+    `    bounds:  <span class="tp">float</span> <span class="op">=</span> <span class="num">1.0</span>`,
+    `    damping: <span class="tp">float</span> <span class="op">=</span> <span class="num">0.98</span>`,
+    `    pos: np.<span class="tp">ndarray</span> <span class="op">=</span> field(<span class="fn">default_factory</span><span class="op">=</span><span class="kw">lambda</span>: <span class="fn">None</span>)`,
+    `    vel: np.<span class="tp">ndarray</span> <span class="op">=</span> field(<span class="fn">default_factory</span><span class="op">=</span><span class="kw">lambda</span>: <span class="fn">None</span>)`,
+    ``,
+    `    <span class="kw">def</span> <span class="fn">__post_init__</span>(<span class="pn">self</span>):`,
+    `        rng       <span class="op">=</span> np.random.<span class="fn">default_rng</span>(<span class="num">42</span>)`,
+    `        <span class="pn">self</span>.pos  <span class="op">=</span> rng.<span class="fn">uniform</span>(<span class="op">-</span><span class="pn">self</span>.bounds, <span class="pn">self</span>.bounds, (<span class="pn">self</span>.n, <span class="num">3</span>))`,
+    `        <span class="pn">self</span>.vel  <span class="op">=</span> rng.<span class="fn">standard_normal</span>((<span class="pn">self</span>.n, <span class="num">3</span>)) <span class="op">*</span> <span class="num">0.01</span>`,
+    ``,
+    `    <span class="kw">def</span> <span class="fn">step</span>(<span class="pn">self</span>, attraction_pt: np.<span class="tp">ndarray</span>, strength: <span class="tp">float</span> <span class="op">=</span> <span class="num">0.002</span>):`,
+    `        <span class="cm">"""Vectorized Verlet integration + boundary reflection."""</span>`,
+    `        delta    <span class="op">=</span> attraction_pt <span class="op">-</span> <span class="pn">self</span>.pos`,
+    `        dist_sq  <span class="op">=</span> np.<span class="fn">einsum</span>(<span class="str">'ij,ij->i'</span>, delta, delta)[:<span class="op">,</span> np.newaxis]`,
+    `        force    <span class="op">=</span> strength <span class="op">*</span> delta <span class="op">/</span> (dist_sq <span class="op">+</span> <span class="num">1e-6</span>)`,
+    ``,
+    `        <span class="pn">self</span>.vel  <span class="op">=</span> (<span class="pn">self</span>.vel <span class="op">+</span> force) <span class="op">*</span> <span class="pn">self</span>.damping`,
+    `        <span class="pn">self</span>.pos <span class="op">+=</span> <span class="pn">self</span>.vel`,
+    ``,
+    `        <span class="cm"># Reflect particles at boundary walls</span>`,
+    `        mask <span class="op">=</span> np.<span class="fn">abs</span>(<span class="pn">self</span>.pos) <span class="op">></span> <span class="pn">self</span>.bounds`,
+    `        <span class="pn">self</span>.vel[mask] <span class="op">*=</span> <span class="op">-</span><span class="num">1</span>`,
+    `        <span class="pn">self</span>.pos <span class="op">=</span> np.<span class="fn">clip</span>(<span class="pn">self</span>.pos, <span class="op">-</span><span class="pn">self</span>.bounds, <span class="pn">self</span>.bounds)`,
+    ``,
+    `    <span class="kw">def</span> <span class="fn">stream</span>(<span class="pn">self</span>, steps: <span class="tp">int</span>) <span class="op">-></span> Generator:`,
+    `        <span class="cm">"""Generator — yields (pos, density) per frame."""</span>`,
+    `        pt <span class="op">=</span> np.<span class="fn">zeros</span>(<span class="num">3</span>)`,
+    `        <span class="kw">for</span> t <span class="kw">in</span> <span class="fn">range</span>(steps):`,
+    `            <span class="cm"># Lissajous attractor — creates organic motion paths</span>`,
+    `            pt[<span class="num">0</span>] <span class="op">=</span> np.<span class="fn">sin</span>(t <span class="op">*</span> <span class="num">0.07</span>) <span class="op">*</span> <span class="num">0.8</span>`,
+    `            pt[<span class="num">1</span>] <span class="op">=</span> np.<span class="fn">cos</span>(t <span class="op">*</span> <span class="num">0.11</span>) <span class="op">*</span> <span class="num">0.6</span>`,
+    `            <span class="pn">self</span>.<span class="fn">step</span>(pt)`,
+    `            density <span class="op">=</span> np.<span class="fn">histogram2d</span>(`,
+    `                <span class="pn">self</span>.pos[:<span class="op">,</span><span class="num">0</span>], <span class="pn">self</span>.pos[:<span class="op">,</span><span class="num">1</span>], bins<span class="op">=</span><span class="num">32</span>,`,
+    `                range<span class="op">=</span>[[<span class="op">-</span><span class="num">1</span>,<span class="num">1</span>],[<span class="op">-</span><span class="num">1</span>,<span class="num">1</span>]])[<span class="num">0</span>]`,
+    `            <span class="kw">yield</span> t, <span class="pn">self</span>.pos.<span class="fn">copy</span>(), density`,
+  ],
+
+  cpp: [
+    `<span class="cm">// SignalProcessor.cpp — template-based DSP for openFrameworks</span>`,
+    `<span class="cm">// Lock-free ring buffer + biquad filter chain for real-time audio</span>`,
+    ``,
+    `<span class="kw">#include</span> <span class="str">&lt;array&gt;</span>`,
+    `<span class="kw">#include</span> <span class="str">&lt;atomic&gt;</span>`,
+    `<span class="kw">#include</span> <span class="str">&lt;cmath&gt;</span>`,
+    `<span class="kw">#include</span> <span class="str">&lt;numbers&gt;</span>`,
+    ``,
+    `<span class="cm">// Compile-time biquad coefficient generation</span>`,
+    `<span class="kw">template</span><span class="op">&lt;</span><span class="tp">std::size_t</span> Order<span class="op">&gt;</span>`,
+    `<span class="kw">struct</span> <span class="tp">BiquadChain</span> {`,
+    `    <span class="kw">struct</span> <span class="tp">Coeffs</span> { <span class="tp">double</span> b0,b1,b2,a1,a2; };`,
+    `    <span class="kw">struct</span> <span class="tp">State</span>  { <span class="tp">double</span> x1<span class="op">=</span><span class="num">0</span>,x2<span class="op">=</span><span class="num">0</span>,y1<span class="op">=</span><span class="num">0</span>,y2<span class="op">=</span><span class="num">0</span>; };`,
+    ``,
+    `    std::array<span class="op">&lt;</span><span class="tp">Coeffs</span>, Order<span class="op">&gt;</span> coeffs;`,
+    `    std::array<span class="op">&lt;</span><span class="tp">State</span>,  Order<span class="op">&gt;</span> state;`,
+    ``,
+    `    <span class="cm">// Direct Form II transposed — minimal delay elements</span>`,
+    `    [[nodiscard]] <span class="tp">double</span> <span class="fn">process</span>(<span class="tp">double</span> x) noexcept {`,
+    `        <span class="kw">for</span> (<span class="tp">std::size_t</span> i <span class="op">=</span> <span class="num">0</span>; i <span class="op">&lt;</span> Order; <span class="op">++</span>i) {`,
+    `            <span class="kw">auto</span><span class="op">&amp;</span> [b0,b1,b2,a1,a2] <span class="op">=</span> coeffs[i];`,
+    `            <span class="kw">auto</span><span class="op">&amp;</span> [x1,x2,y1,y2]    <span class="op">=</span> state[i];`,
+    `            <span class="tp">double</span> y <span class="op">=</span> b0<span class="op">*</span>x <span class="op">+</span> b1<span class="op">*</span>x1 <span class="op">+</span> b2<span class="op">*</span>x2`,
+    `                       <span class="op">-</span> a1<span class="op">*</span>y1 <span class="op">-</span> a2<span class="op">*</span>y2;`,
+    `            x2<span class="op">=</span>x1; x1<span class="op">=</span>x; y2<span class="op">=</span>y1; y1<span class="op">=</span>y; x<span class="op">=</span>y;`,
+    `        }`,
+    `        <span class="kw">return</span> x;`,
+    `    }`,
+    ``,
+    `    <span class="kw">void</span> <span class="fn">designLowpass</span>(<span class="tp">double</span> fc, <span class="tp">double</span> sr, <span class="tp">double</span> Q <span class="op">=</span> <span class="num">0.707</span>) {`,
+    `        <span class="tp">double</span> w0  <span class="op">=</span> <span class="num">2</span><span class="op">*</span>std::numbers::pi<span class="op">*</span>fc<span class="op">/</span>sr;`,
+    `        <span class="tp">double</span> alpha <span class="op">=</span> std::<span class="fn">sin</span>(w0) <span class="op">/</span> (<span class="num">2</span><span class="op">*</span>Q);`,
+    `        <span class="tp">double</span> a0   <span class="op">=</span> <span class="num">1</span><span class="op">+</span>alpha;`,
+    `        <span class="kw">for</span> (<span class="kw">auto</span><span class="op">&amp;</span> c : coeffs) {`,
+    `            c <span class="op">=</span> { (<span class="num">1</span><span class="op">-</span>std::<span class="fn">cos</span>(w0))<span class="op">/</span>(<span class="num">2</span><span class="op">*</span>a0),`,
+    `                  (<span class="num">1</span><span class="op">-</span>std::<span class="fn">cos</span>(w0))<span class="op">/</span>a0,`,
+    `                  (<span class="num">1</span><span class="op">-</span>std::<span class="fn">cos</span>(w0))<span class="op">/</span>(<span class="num">2</span><span class="op">*</span>a0),`,
+    `                  <span class="op">-</span><span class="num">2</span><span class="op">*</span>std::<span class="fn">cos</span>(w0)<span class="op">/</span>a0,`,
+    `                  (<span class="num">1</span><span class="op">-</span>alpha)<span class="op">/</span>a0 };`,
+    `        }`,
+    `    }`,
+    `};`,
+    ``,
+    `<span class="cm">// Lock-free SPSC ring buffer for audio thread safety</span>`,
+    `<span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T, <span class="tp">std::size_t</span> N<span class="op">&gt;</span>`,
+    `<span class="kw">class</span> <span class="tp">RingBuffer</span> {`,
+    `    std::array<span class="op">&lt;</span>T, N<span class="op">&gt;</span> buf;`,
+    `    std::atomic<span class="op">&lt;</span><span class="tp">std::size_t</span><span class="op">&gt;</span> head<span class="op">{</span><span class="num">0</span><span class="op">}</span>, tail<span class="op">{</span><span class="num">0</span><span class="op">}</span>;`,
+    `<span class="kw">public</span>:`,
+    `    <span class="tp">bool</span> <span class="fn">push</span>(T val) noexcept {`,
+    `        <span class="kw">auto</span> h <span class="op">=</span> head.load(std::memory_order_relaxed);`,
+    `        <span class="kw">auto</span> next <span class="op">=</span> (h<span class="op">+</span><span class="num">1</span>) <span class="op">%</span> N;`,
+    `        <span class="kw">if</span> (next <span class="op">==</span> tail.load(std::memory_order_acquire)) <span class="kw">return false</span>;`,
+    `        buf[h] <span class="op">=</span> std::<span class="fn">move</span>(val);`,
+    `        head.store(next, std::memory_order_release);`,
+    `        <span class="kw">return true</span>;`,
+    `    }`,
+    `};`,
+  ]
+};
+
+// ── OUTPUTS ──────────────────────────────────────────────────────────────────
+
+const outputs = {
+  js: [
+    { text: '> new AudioReactiveEngine({ fftSize: 2048 })', cls: 'dim' },
+    { text: 'AudioReactiveEngine initialized', cls: 'accent-js' },
+    { text: '  sampleRate : 44100 Hz', cls: '' },
+    { text: '  fftBins    : 1024', cls: '' },
+    { text: '  bands      : sub / bass / mid / high', cls: '' },
+    { text: '', cls: '' },
+    { text: '> engine.analyze(analyserNode)', cls: 'dim' },
+    { text: '{', cls: '' },
+    { text: '  sub  : 0.312  ████████░░░░░░', cls: 'result' },
+    { text: '  bass : 0.741  ██████████████████░░', cls: 'result' },
+    { text: '  mid  : 0.528  █████████████░░░░░░░', cls: 'result' },
+    { text: '  high : 0.189  █████░░░░░░░░░░░░░░░', cls: 'result' },
+    { text: '}', cls: '' },
+    { text: '', cls: '' },
+    { text: '> // streaming at 120 BPM (16th note grid)', cls: 'dim' },
+    { text: 'frame 0  →  bass transient detected', cls: 'accent-js' },
+    { text: 'frame 4  →  energy shift: mid +0.14', cls: 'accent-js' },
+    { text: 'frame 8  →  sub pulse: 0.91', cls: 'accent-js' },
+  ],
+  py: [
+    { text: '>>> field = ParticleField(n=1000)', cls: 'dim' },
+    { text: 'Initialized 1000 particles in R³', cls: 'accent-py' },
+    { text: '  pos.shape  : (1000, 3)', cls: '' },
+    { text: '  vel.shape  : (1000, 3)', cls: '' },
+    { text: '  bounds     : ±1.0', cls: '' },
+    { text: '', cls: '' },
+    { text: '>>> for t, pos, density in field.stream(60):', cls: 'dim' },
+    { text: '...     print(f"t={t}  centroid={pos.mean(0).round(3)}")', cls: 'dim' },
+    { text: '', cls: '' },
+    { text: 't=0   centroid=[-0.001  0.003  0.002]', cls: '' },
+    { text: 't=10  centroid=[ 0.182  0.097 -0.011]', cls: '' },
+    { text: 't=20  centroid=[ 0.431  0.251 -0.008]', cls: '' },
+    { text: 't=40  centroid=[ 0.612  0.374 -0.003]', cls: '' },
+    { text: '', cls: '' },
+    { text: 'Peak density cell  : [18, 21]', cls: 'result' },
+    { text: 'Max particles/cell : 47 of 1000', cls: 'result' },
+    { text: 'Avg speed (t=60)   : 0.0083 u/frame', cls: 'result' },
+    { text: '✓ Simulation complete — 60 frames', cls: 'accent-py' },
+  ],
+  cpp: [
+    { text: '$ g++ -std=c++23 -O2 SignalProcessor.cpp', cls: 'dim' },
+    { text: '$ ./a.out --test', cls: 'dim' },
+    { text: '', cls: '' },
+    { text: 'BiquadChain<4> constructed', cls: 'accent-cpp' },
+    { text: '  Order      : 4 (8th-order Butterworth)', cls: '' },
+    { text: '  Stack size : 320 bytes  (zero heap)', cls: '' },
+    { text: '', cls: '' },
+    { text: 'designLowpass(fc=800Hz, sr=48000, Q=0.707)', cls: 'dim' },
+    { text: '  b0=0.000274  b1=0.000548  b2=0.000274', cls: '' },
+    { text: '  a1=-1.97537  a2= 0.97647', cls: '' },
+    { text: '', cls: '' },
+    { text: 'Processing 512-sample block...', cls: 'dim' },
+    { text: '  Input  RMS : -12.3 dBFS', cls: '' },
+    { text: '  Output RMS : -21.7 dBFS  (−9.4 dB @ 800Hz)', cls: 'result' },
+    { text: '  Latency    : 0 samples  (non-causal path)', cls: 'result' },
+    { text: '', cls: '' },
+    { text: 'RingBuffer<float,1024>: lock-free SPSC', cls: 'accent-cpp' },
+    { text: '✓ All real-time constraints satisfied', cls: 'accent-cpp' },
+  ]
+};
+
+// ── RENDER CODE ──────────────────────────────────────────────────────────────
+
+function renderCode(lang) {
+  const container = document.getElementById(`code-${lang}`);
+  container.innerHTML = '';
+  codes[lang].forEach((line, i) => {
+    const row = document.createElement('div');
+    row.className = 'code-line';
+    row.innerHTML = `<span class="ln">${i + 1}</span><span class="lc">${line}</span>`;
+    container.appendChild(row);
+  });
+  // Staggered reveal
+  const rows = container.querySelectorAll('.code-line');
+  rows.forEach((row, i) => {
+    setTimeout(() => row.classList.add('revealed'), i * 18);
+  });
+}
+
+// ── TAB SWITCH ───────────────────────────────────────────────────────────────
+
+function switchTab(lang) {
+  document.querySelectorAll('.lang-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.code-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`[data-lang="${lang}"]`).classList.add('active');
+  document.getElementById(`panel-${lang}`).classList.add('active');
+  renderCode(lang);
+  // Clear previous output
+  document.getElementById(`out-${lang}`).innerHTML = '';
+  document.getElementById(`cur-${lang}`).classList.remove('active');
+}
+
+// ── RUN OUTPUT ───────────────────────────────────────────────────────────────
+
+function runOutput(lang) {
+  const container = document.getElementById(`out-${lang}`);
+  const cursor = document.getElementById(`cur-${lang}`);
+  container.innerHTML = '';
+  cursor.classList.add('active');
+
+  const lines = outputs[lang];
+  lines.forEach((line, i) => {
+    const el = document.createElement('span');
+    el.className = `o-line ${line.cls}`;
+    el.textContent = line.text;
+    container.appendChild(el);
+    setTimeout(() => {
+      el.classList.add('show');
+      if (i === lines.length - 1) cursor.classList.remove('active');
+    }, i * 90 + 200);
+  });
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+
+renderCode('js');
+</script>
+</body>
+</html>
